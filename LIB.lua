@@ -8,7 +8,7 @@ local lighting = cloneref(game:GetService("Lighting"))
 local run = cloneref(game:GetService("RunService"))
 local stats = cloneref(game:GetService("Stats"))
 local coregui = cloneref(game:GetService("CoreGui"))
-local debris = cloneref(game:GetService("Debris"))
+local debris = cloneref(game:GetService("Debris")
 local tween_service = cloneref(game:GetService("TweenService"))
 local rs = cloneref(game:GetService("ReplicatedStorage"))
 
