@@ -1,20 +1,16 @@
 local library = {}
-local _G = getgenv()
-_G.library = library -- For backward compatibility
-
---aaa
-local uis = game:GetService("UserInputService")
-local players = game:GetService("Players")
-local ws = game:GetService("Workspace")
-local http_service = game:GetService("HttpService")
-local gui_service = game:GetService("GuiService")
-local lighting = game:GetService("Lighting")
-local run = game:GetService("RunService")
-local stats = game:GetService("Stats")
-local coregui = game:GetService("CoreGui")
-local debris = game:GetService("Debris")
-local tween_service = game:GetService("TweenService")
-local rs = game:GetService("ReplicatedStorage")
+local uis = cloneref(game:GetService("UserInputService"))
+local players = cloneref(game:GetService("Players"))
+local ws = cloneref(game:GetService("Workspace"))
+local http_service = cloneref(game:GetService("HttpService"))
+local gui_service = cloneref(game:GetService("GuiService"))
+local lighting = cloneref(game:GetService("Lighting"))
+local run = cloneref(game:GetService("RunService"))
+local stats = cloneref(game:GetService("Stats"))
+local coregui = cloneref(game:GetService("CoreGui"))
+local debris = cloneref(game:GetService("Debris")
+local tween_service = cloneref(game:GetService("TweenService"))
+local rs = cloneref(game:GetService("ReplicatedStorage"))
 
 local vec2 = Vector2.new
 local vec3 = Vector3.new
@@ -40,7 +36,6 @@ local floor = math.floor
 local min = math.min 
 local abs = math.abs 
 
--- Create local library table first
 local library = {
     flags = {},
     config_flags = {},
@@ -63,9 +58,6 @@ local library = {
     },
     font = nil, 
 }
-
--- Then assign to getgenv().library
-getgenv().library = library
 
     local flags = library.flags
     local config_flags = library.config_flags
@@ -169,7 +161,6 @@ getgenv().library = library
         
     library.__index = library
 
-        -- Check if makefolder exists and library.folders is a table
         if type(makefolder) == "function" and type(library.folders) == "table" then
             for _, path in next, library.folders do 
                 if type(path) == "string" then
@@ -376,12 +367,10 @@ getgenv().library = library
         local list = {};
         local configsDir = library.directory .. "\\configs"
         
-        -- Create configs directory if it doesn't exist
         if not isfolder(configsDir) then
             makefolder(configsDir)
         end
 
-        -- List files in the configs directory
         for idx, file in next, listfiles(configsDir) do
             local name = file
                 :gsub(configsDir .. "\\", "")
@@ -397,23 +386,21 @@ getgenv().library = library
     function library:get_config()
         local Config = {}
         
-        -- Save all flags including keybinds
         for flagName, flagValue in pairs(flags) do
-            -- Handle keybinds
+
             if type(flagValue) == "table" and flagValue.key ~= nil then
-                -- Skip invalid keybinds
+
                 if flagValue.key == Enum.KeyCode.Unknown or tostring(flagValue.key) == "..." then
                     continue
                 end
                 
-                -- Save keybind data
                 Config[flagName] = {
                     _type = "keybind",
                     key = tostring(flagValue.key),
                     mode = flagValue.mode or "toggle",
                     active = flagValue.active or false
                 }
-            -- Handle other table values
+
             elseif type(flagValue) == "table" then
                 local serialized = {}
                 for k, v in pairs(flagValue) do
@@ -424,7 +411,7 @@ getgenv().library = library
                 if next(serialized) ~= nil then
                     Config[flagName] = serialized
                 end
-            -- Handle simple values
+
             else
                 Config[flagName] = flagValue
             end
@@ -436,15 +423,15 @@ getgenv().library = library
     end
     
     function library:load_config(config, noEnable)
-        -- First pass: Load keybinds
+
         for flagName, value in pairs(config) do
             if type(value) == "table" and value._type == "keybind" then
-                -- Find or create the flag
+
                 local flag = flags[flagName]
                 if not flag then
                     flag = {
                         _type = "keybind",
-                        callback = function() end, -- Default callback if none exists
+                        callback = function() end,
                         key = Enum.KeyCode.Unknown,
                         mode = "toggle",
                         active = false
@@ -452,7 +439,6 @@ getgenv().library = library
                     flags[flagName] = flag
                 end
                 
-                -- Convert string key back to Enum if needed
                 local keyValue = value.key
                 if type(keyValue) == "string" and keyValue:find("Enum%\.") then
                     local success, result = pcall(loadstring("return " .. keyValue))
@@ -461,24 +447,20 @@ getgenv().library = library
                     end
                 end
                 
-                -- Update the keybind properties
                 flag.key = keyValue ~= "..." and keyValue or Enum.KeyCode.Unknown
                 flag.mode = value.mode or "toggle"
                 flag.active = value.active or false
                 
-                -- Update the flags table to stay in sync
                 if flags[flagName] then
                     flags[flagName].key = flag.key
                     flags[flagName].mode = flag.mode
                     flags[flagName].active = flag.active
                 end
                 
-                -- Force update the UI if the keybind has an update function
                 if flag.update then
                     pcall(flag.update)
                 end
                 
-                -- Update the config flags
                 if library.config_flags[flagName] then
                     if type(library.config_flags[flagName]) == "table" and library.config_flags[flagName].set then
                         pcall(function()
@@ -487,7 +469,6 @@ getgenv().library = library
                     end
                 end
                 
-                -- Trigger the callback if it exists
                 if flag.callback then
                     pcall(flag.callback, keyValue)
                 end
@@ -495,7 +476,6 @@ getgenv().library = library
         end
     end
 
-    -- Second pass: Load other values
     if config and config.__ui_state == nil then
         for flagName, value in pairs(config) do
             if type(value) ~= "table" or value._type ~= "keybind" then
@@ -513,7 +493,6 @@ getgenv().library = library
         end
     end
 
-    -- Third pass: Handle UI state
     if config and config.__ui_state and not noEnable and self.cfg then
         for k, v in pairs(config.__ui_state) do
             if self.cfg[k] ~= nil then
@@ -522,7 +501,6 @@ getgenv().library = library
         end
     end
 
-    -- Fourth pass: Handle feature toggles if not in noEnable mode
     if config and not noEnable then
         for key, value in pairs(config) do
             if type(value) == "boolean" and (key:find("Enabled") or key:find("_enabled") or key:find("_active")) then
